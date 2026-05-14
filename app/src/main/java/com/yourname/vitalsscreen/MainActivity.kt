@@ -25,6 +25,6 @@ class MainActivity : AppCompatActivity() {
         rootLayout = findViewById(R.id.root_layout)
         smartSpectraView = findViewById(R.id.smart_spectra_view)
 
-        SmartSpectraSdk.getInstance().setApiKey("YOUR_PRESAGE_API_KEY")
+        SmartSpectraSdk.getInstance().setApiKey("Api-key")
     }
 }
