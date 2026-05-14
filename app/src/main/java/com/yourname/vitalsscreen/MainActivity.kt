@@ -4,10 +4,12 @@ import android.animation.ArgbEvaluator
 import android.animation.ValueAnimator
 import android.graphics.Color
 import android.os.Bundle
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.presagetech.smartspectra.SmartSpectraView
 import com.presagetech.smartspectra.SmartSpectraSdk
+import com.presagetech.smartspectra.SmartSpectraView
+import com.presagetech.smartspectra.proto.MetricsProto
 
 class MainActivity : AppCompatActivity() {
 
@@ -15,8 +17,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvHeartRate: TextView
     private lateinit var tvBreathingRate: TextView
     private lateinit var tvStatus: TextView
+    private lateinit var rootLayout: LinearLayout
 
-    private val apiKey = "YOUR_PRESAGE_API_KEY"
+    private var lastBgColor = Color.parseColor("#0a0a0f")
+
+    private val smartSpectraSdk: SmartSpectraSdk = SmartSpectraSdk.shared
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -25,46 +30,70 @@ class MainActivity : AppCompatActivity() {
         tvHeartRate = findViewById(R.id.tv_heart_rate)
         tvBreathingRate = findViewById(R.id.tv_breathing_rate)
         tvStatus = findViewById(R.id.tv_status)
+        rootLayout = findViewById(R.id.root_layout)
         smartSpectraView = findViewById(R.id.smart_spectra_view)
 
-        SmartSpectraSdk.getInstance().setApiKey(apiKey)
+        smartSpectraSdk.config.apiKey = "YOUR_PRESAGE_API_KEY"
+
+        // observe live metrics and drive the UI
+        smartSpectraSdk.metrics.observe(this) { metrics ->
+            metrics?.let { handleMetrics(it) }
+        }
+    }
+
+    private fun handleMetrics(metrics: MetricsProto.Metrics) {
+        // get latest breathing rate
+        if (metrics.hasBreathing()) {
+            val breathingRate = metrics.breathing.rateList.lastOrNull()?.value?.toInt()
+            breathingRate?.let { runOnUiThread { updateBreathingUI(it) } }
+        }
+
+        // get latest pulse rate from cardio
+        if (metrics.hasCardio()) {
+            val pulseRate = metrics.cardio.pulseRateList.lastOrNull()?.value?.toInt()
+            pulseRate?.let { runOnUiThread { updateHeartRateUI(it) } }
+        }
     }
 
     private fun updateHeartRateUI(bpm: Int) {
         val (color, status) = when {
-            bpm < 60  -> Pair(Color.parseColor("#00FFFF"), "LOW")
-            bpm < 100 -> Pair(Color.parseColor("#00FF41"), "NORMAL")
-            bpm < 120 -> Pair(Color.parseColor("#FFD700"), "ELEVATED")
-            else      -> Pair(Color.parseColor("#FF0040"), "HIGH")
+            bpm < 60  -> Pair(Color.parseColor("#00FFFF"), "LOW ↓")
+            bpm < 100 -> Pair(Color.parseColor("#00FF41"), "NORMAL ✓")
+            bpm < 120 -> Pair(Color.parseColor("#FFD700"), "ELEVATED ⚠")
+            else      -> Pair(Color.parseColor("#FF0040"), "HIGH !")
         }
 
-        // animate background color change based on heart rate
-        val rootView = findViewById<android.view.View>(android.R.id.content)
-        val currentColor = (rootView.background as? android.graphics.drawable.ColorDrawable)?.color
-            ?: Color.parseColor("#0a0a0f")
-
-        ValueAnimator.ofObject(ArgbEvaluator(), currentColor, color).apply {
-            duration = 800
+        // animate background color driven by heart rate
+        ValueAnimator.ofObject(ArgbEvaluator(), lastBgColor, color).apply {
+            duration = 1000
             addUpdateListener { animator ->
-                rootView.setBackgroundColor(animator.animatedValue as Int)
+                val c = animator.animatedValue as Int
+                rootLayout.setBackgroundColor(
+                    Color.argb(255,
+                        (Color.red(c) * 0.12).toInt().coerceAtMost(25),
+                        (Color.green(c) * 0.12).toInt().coerceAtMost(25),
+                        (Color.blue(c) * 0.12).toInt().coerceAtMost(35)
+                    )
+                )
             }
             start()
         }
+        lastBgColor = color
 
-        tvHeartRate.text = "$bpm bpm"
+        tvHeartRate.text = "$bpm"
         tvHeartRate.setTextColor(color)
         tvStatus.text = status
         tvStatus.setTextColor(color)
     }
 
-    private fun updateBreathingRateUI(bpm: Int) {
-        tvBreathingRate.text = "$bpm bpm"
+    private fun updateBreathingUI(bpm: Int) {
+        tvBreathingRate.text = "$bpm"
 
-        // pulse animation speed based on breathing rate
+        // animate scale speed driven by breathing rate
         val duration = if (bpm > 0) (60000L / bpm) else 2000L
         tvBreathingRate.animate()
-            .scaleX(1.2f)
-            .scaleY(1.2f)
+            .scaleX(1.3f)
+            .scaleY(1.3f)
             .setDuration(duration / 2)
             .withEndAction {
                 tvBreathingRate.animate()
