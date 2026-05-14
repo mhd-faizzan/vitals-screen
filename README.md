@@ -9,7 +9,7 @@ An Android app that turns your phone camera into a real-time vitals monitor. Bui
 > The values shown below were recorded during a live session. For privacy reasons the face has been removed from the frame before taking the screenshot — the metrics shown are real measurements captured by the SDK.
 
 <p align="center">
-  <img src="assets/demo.jpg" alt="Vitals Screen Demo" width="300"/>
+  <img src="assets/demo.jpeg" alt="Vitals Screen Demo" width="300"/>
 </p>
 
 ---
