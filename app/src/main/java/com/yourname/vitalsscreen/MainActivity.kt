@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.presagetech.smartspectra.SmartSpectraSdk
 import com.presagetech.smartspectra.SmartSpectraView
-import com.presagetech.smartspectra.proto.MetricsProto
+import com.presagetech.smartspectra.proto.MetricsProto.Metrics
 
 class MainActivity : AppCompatActivity() {
 
@@ -41,14 +41,12 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleMetrics(metrics: MetricsProto.Metrics) {
-        // get latest breathing rate
+    private fun handleMetrics(metrics: Metrics) {
         if (metrics.hasBreathing()) {
             val breathingRate = metrics.breathing.rateList.lastOrNull()?.value?.toInt()
             breathingRate?.let { runOnUiThread { updateBreathingUI(it) } }
         }
 
-        // get latest pulse rate from cardio
         if (metrics.hasCardio()) {
             val pulseRate = metrics.cardio.pulseRateList.lastOrNull()?.value?.toInt()
             pulseRate?.let { runOnUiThread { updateHeartRateUI(it) } }
@@ -63,7 +61,6 @@ class MainActivity : AppCompatActivity() {
             else      -> Pair(Color.parseColor("#FF0040"), "HIGH !")
         }
 
-        // animate background color driven by heart rate
         ValueAnimator.ofObject(ArgbEvaluator(), lastBgColor, color).apply {
             duration = 1000
             addUpdateListener { animator ->
@@ -89,7 +86,6 @@ class MainActivity : AppCompatActivity() {
     private fun updateBreathingUI(bpm: Int) {
         tvBreathingRate.text = "$bpm"
 
-        // animate scale speed driven by breathing rate
         val duration = if (bpm > 0) (60000L / bpm) else 2000L
         tvBreathingRate.animate()
             .scaleX(1.3f)
