@@ -1,6 +1,6 @@
 # Vitals Screen
 
-An Android app that turns your phone camera into a real-time vitals monitor. Built with Presage SmartSpectra SDK. Point your camera at your face and watch your heart rate and breathing rate update live. No wearables, no contact sensors, just your camera.
+An Android app that turns your phone camera into a real-time vitals monitor. Built with Presage SmartSpectra SDK for MLH Global Hack Week. Point your camera at your face and watch your heart rate and breathing rate update live. No wearables, no contact sensors, just your camera.
 
 ---
 
